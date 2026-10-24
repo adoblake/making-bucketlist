@@ -42,3 +42,9 @@ Scheduled games contain two capacity-limited teams. Players can join, choose/swi
 This revision replaces the previous tab-only availability control to focus on scheduled team formation. Shared presence remains a production milestone. Maps are Google web embeds, not a licensed custom Maps SDK implementation. Cloud map access is blocked; an explicitly labeled illustration and external map link handle that state. No illustrative court diagram represents street geography or navigation.
 
 Local state is migrated from the earlier prototype where possible, preserving custom games, memberships, and messages. Custom future game times are stored as ISO instants and displayed in the viewer's timezone. Fictional sample-game dates are generated relative to the current demo session and must not be treated as scheduled real events.
+
+## Reference-led opening flow
+
+The supplied four-stage map reference now defines the opening flow: location → compact court popup → court info panel → team expansion. The landing screen is the map on every launch. Pierce Park is the initial sample venue; no location permission is requested automatically. Stats, Search, and Chat form the primary navigation, with personal game/profile settings in the hamburger menu. The orange basketball-pin motif, black chrome, white text, pink request indicators, and square orange actions are repeated throughout. Light/dark/device appearance remains available.
+
+Guests browse courts, games, and public roster details. A tab-local demo session gates team joins, game creation, messaging, and personal screens. This demonstrates the post-login sequence without pretending to authenticate: no credentials, account, or secure session exist. Server authentication remains a production requirement. No numeric court rating or review count is fabricated; unverified venues say Not rated. Court art is labeled as an illustration rather than a real venue photo.
