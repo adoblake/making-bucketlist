@@ -4,28 +4,28 @@ A mobile web prototype for **find a court → join a scheduled game → set up y
 
 ## Open it without installing anything
 
-Choose **Code → Download ZIP** on GitHub, extract the archive, and open **BucketList.html** in your browser. The styles and scripts are included in that file. Google Maps needs Internet access; if it is blocked, the app shows a clearly labeled court-locator illustration and an external map link.
+Choose **Code → Download ZIP** on GitHub, extract the archive, and open **BucketList.html** in your browser. The styles and scripts are included in that file. Street map tiles need Internet access. The map uses Leaflet/OpenStreetMap so our basketball pins can be geographically anchored. Google Maps remains available for directions. If tiles are blocked, a status message explains that the pins use sample coordinates; no fake street geography is shown.
 
 This is a local prototype, not a native iOS/Android release or a multiplayer service. Fictional players and sample games are labeled. Changes stay in browser storage; chats are not delivered to other people.
 
 ## Opening sequence
 
-The app always opens in map mode, with no marketing page or mandatory profile form. The initial sample venue is Pierce Park. Tap its basketball pin, then tap the court name in the popup for court details, games, and teams. The popup and bottom bar both offer **Start a game**. Search opens a court-search overlay. My Games, Profile, and the theme toggle are in the hamburger menu.
+The app always opens in map mode, with no marketing page or mandatory profile form. The initial map fits the available sample Phoenix courts, with Pierce Park initially selected. Orange pins appear only for matching courts with scheduled roster spots. Tap its basketball pin, then tap the court name in the popup for court details, games, and teams. The popup and bottom bar both offer **Start a game**. Time and play-style filters remove pins for full, past, cancelled, or nonmatching games; no match means no pin. Availability here does not mean verified live court occupancy. Search opens a court-search overlay with time/play-style filters. My Games, Profile, and the theme toggle are in the hamburger menu.
 
 Guests can browse public court/game details. Joining a team, organizing a game, accessing personal screens, and chatting require the clearly labeled **local demo sign-in**. Enter a display name to exercise that sequence, or continue browsing. No account is created, no password is collected, and there is no authentication server. A tab-scoped demo session survives reloads; sign-out is in Profile. Device-local data is retained after sign-out. This UI gate is not a security boundary.
 
 ## What you can try
 
-- **Courts:** search Phoenix, Scottsdale, or Austin; select a sample court, tap its marker/popup, and view the selected venue on the Google Maps embed; open court details, directions, scheduled games, or its lasting community chat. Optional geolocation filters the sample database within 30 miles.
+- **Courts:** search Phoenix, Scottsdale, or Austin; select a sample court, tap its marker/popup, and pan/zoom the map with geographically anchored pins; open court details, directions, scheduled games, or its lasting community chat. Optional geolocation filters the sample database within 30 miles.
 - **Scheduled games:** join the roster, select/switch between capacity-limited Team A/B, and name your team within that game. Create a future game with a court, player limit, play style, and meeting/access notes.
 - **Chat:** separate court-community and game-group conversations, plus a central chat list.
 - **My stats:** log and delete personal session records for points, rebounds, and assists; see self-reported averages and history.
 - **Profiles:** open a player from a roster. Fictional examples demonstrate public and private profiles/stats. Your profile details and stats have independent sharing settings, both off by default; preview what others would see. Display names remain visible on rosters.
-- **Appearance:** use the hamburger-menu toggle or select Light, Dark, or Use device setting in Profile, then save. Themes persist. Google controls its embedded map's appearance independently.
+- **Appearance:** use the hamburger-menu toggle or select Light, Dark, or Use device setting in Profile, then save. Themes persist. The street basemap retains its readable provider styling in both themes.
 
 ## Screenshots
 
-Captured on a mobile viewport. The map illustration shows the cloud network fallback, not Google street imagery.
+Captured on a mobile viewport. Street tiles are blocked in the cloud screenshots. Markers are geographically projected against a neutral grid; it is not street imagery.
 
 | Opening map | Court popup | Court details |
 | --- | --- | --- |
@@ -44,7 +44,7 @@ npm ci
 npm start
 ```
 
-Open the server on port 3000 (`PORT` overrides it). Runtime uses Node built-ins; Playwright is a development-only dependency.
+Open the server on port 3000 (`PORT` overrides it). The server uses Node built-ins. Leaflet 1.9.4 is pinned and its licensed distribution is bundled in public/vendor/leaflet so the standalone artifact needs no CDN scripts. Playwright is a development-only dependency.
 
 ```sh
 npm test                 # HTTP, team-capacity, privacy projection, and stats tests
@@ -60,13 +60,17 @@ PORT=3090 npm start
 APP_URL=http://127.0.0.1:3090 BROWSER_EXECUTABLE=/usr/bin/chromium npm run test:browser
 ```
 
-If no Chromium is installed, run `npx playwright install chromium` and omit `BROWSER_EXECUTABLE`. The browser suite checks automatic map opening, guest browsing, local-demo sign-in gates/cancel/resume/sign-out, and team switching/naming, separate chats, profile visibility, stats, persistence, destination search, themes, responsive overflow, and the standalone artifact. External Google Maps rendering is not asserted because the cloud environment blocks it.
+If no Chromium is installed, run `npx playwright install chromium` and omit `BROWSER_EXECUTABLE`. The browser suite checks automatic map opening, guest browsing, local-demo sign-in gates/cancel/resume/sign-out, and team switching/naming, separate chats, profile visibility, stats, persistence, destination search, themes, responsive overflow, and the standalone artifact. Marker projection, keyboard activation, pan/refit, and availability filters are checked; external tile availability is not asserted because the cloud environment blocks the tile provider.
 
 ## Maps and privacy boundaries
 
-This prototype uses a Google Maps web embed and external Google directions links; it has no Maps API key, live Places search, custom map markers, or verified court database. The pin is a court-selection control; on the live embedded map it moves to a corner so it cannot be mistaken for a marker anchored to map coordinates. Precise interactive custom markers require a Maps SDK integration. A production integration needs an approved Maps/Places configuration with appropriate billing and key restrictions. Venue coordinates, access, hours, and conditions remain unverified. Map-blocking/offline cases retain access to court details and an external map link.
+The map uses Leaflet 1.9.4 and OpenStreetMap street tiles with visible attribution, custom geographic basketball pins, pan/zoom, auto-panning popups, and fit-to-results. Google Maps directions open only when requested. No Maps API key is required for this prototype. A custom Google-powered map can replace this provider when the required API configuration is supplied. Public OSM tiles have a usage policy and no app-specific uptime guarantee; production must provision an appropriate provider.
 
-Precise user coordinates stay in memory for nearby filtering; only a selected public court address is used in the map request. Google may receive ordinary embed request metadata. Stats/profile visibility is demonstrated in UI projections only. Real privacy, team reservations, and message delivery require authenticated server-side authorization and shared storage.
+Court coordinates, access, hours, and conditions remain sample/unverified. Pin eligibility is based on future scheduled games with open roster spots and the selected day/style; it never claims live court occupancy. Self-reported sample availability is not a court reservation. Known courts without matching available games remain in the results list without a pin.
+
+Precise user coordinates stay in memory for local filtering. Normal map viewport tile requests go to OpenStreetMap; opening directions sends the chosen public venue to Google. Stats/profile visibility remains a local UI demonstration, not server authorization. Real privacy, team reservations, and message delivery require authenticated shared storage.
+
+See [UX decisions and standard references](docs/UX-DECISIONS.md) for the applied conventions, source-access limitations, and remaining production work. The new published Figma site also could not be retrieved through the cloud proxy.
 
 ## Next production milestones
 

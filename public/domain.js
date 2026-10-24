@@ -24,3 +24,10 @@ export function statSummary(entries) {
 export function validStatEntry(e, today) {
   return typeof e.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(e.date) && Number.isFinite(Date.parse(e.date)) && new Date(e.date).toISOString().slice(0, 10) === e.date && e.date <= today && ['points', 'rebounds', 'assists'].every(key => Number.isInteger(e[key]) && e[key] >= 0 && e[key] <= 200);
 }
+
+// Availability means a future scheduled game with a roster spot, never live occupancy.
+export function availableGames(games, courtId, countPlayers, now, when='upcoming', style='Any style') {
+ const day = value => {const d=new Date(value);return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;};
+ const target = new Date(now);if(when==='tomorrow')target.setDate(target.getDate()+1);
+ return games.filter(g=>g.courtId===courtId && !g.cancelled && Number.isFinite(Date.parse(g.startsAt)) && new Date(g.startsAt)>now && countPlayers(g)<g.capacity && (when==='upcoming'||day(g.startsAt)===day(target)) && (style==='Any style'||g.level===style||(style!=='Adaptive basketball'&&g.level==='All levels')));
+}

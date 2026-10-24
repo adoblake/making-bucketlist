@@ -1,4 +1,4 @@
-import { teamCapacity, canJoinTeam, visiblePlayer, statSummary, validStatEntry } from './domain.js';
+import { teamCapacity, canJoinTeam, visiblePlayer, statSummary, validStatEntry, availableGames } from './domain.js';
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const uid = () => globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -58,7 +58,7 @@ let signedIn=false,pendingAction=null;
 try{signedIn=sessionStorage.getItem('bucketlist-demo-session')==='active';}catch{}
 function requireSession(action){if(signedIn)return true;openLogin(action);return false;}
 function openLogin(action){pendingAction=action;showDialog('LOCAL DEMO SIGN-IN',`<div class="login-brand">${pinLogo()}<h2>Bucketlist</h2><p>Let’s Play.</p></div><p class="muted">Sign in to join teams, organize games, chat, and log stats.</p><form id="login-form" class="stack"><label>Your display name<input name="displayName" maxlength="40" value="${state.profile.name==='You'?'':esc(state.profile.name)}" placeholder="What should the crew call you?" required autocomplete="nickname"></label><p class="form-error" id="login-error" role="alert"></p><button class="primary">CONTINUE IN LOCAL DEMO</button></form><button class="secondary full" id="guest-continue">Keep browsing the map</button><p class="note">Demo sign-in only: no account is created and no password is needed. Your changes stay on this device.</p>`);$('#guest-continue').onclick=()=>{pendingAction=null;$('#detail-dialog').close();};$('#login-form').onsubmit=e=>{e.preventDefault();const name=new FormData(e.target).get('displayName').trim();if(!name){$('#login-error').textContent='Enter a display name.';return;}state.profile.name=name;signedIn=true;try{sessionStorage.setItem('bucketlist-demo-session','active');}catch{}save();const next=pendingAction;pendingAction=null;$('#detail-dialog').close();render();if(next)next();};}
-const state=readState();let tab='discover',query='Phoenix',selectedCourt='pierce',coordinates=null,currentDialog=null;
+const state=readState();let tab='discover',query='Phoenix',selectedCourt='pierce',coordinates=null,currentDialog=null,whenFilter='upcoming',styleFilter='Any style';
 const games=()=>[...sampleGames,...state.custom];
 const courtById=id=>courts.find(c=>c.id===id);
 const gameById=id=>games().find(g=>g.id===id);
@@ -68,31 +68,56 @@ function toast(text){$('#toast').textContent=text;$('#toast').style.display='blo
 function distance(c){if(!coordinates)return null;const rad=n=>n*Math.PI/180;const a=Math.sin(rad(c.lat-coordinates.lat)/2)**2+Math.cos(rad(coordinates.lat))*Math.cos(rad(c.lat))*Math.sin(rad(c.lng-coordinates.lng)/2)**2;return 3959*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
 function matchedCourts(){const found=courts.filter(c=>coordinates?distance(c)<=30:[c.name,c.city,c.address].some(v=>v.toLowerCase().includes(query.toLowerCase())));return coordinates?found.sort((a,b)=>distance(a)-distance(b)):found;}
 function upcoming(courtId){return games().filter(g=>g.courtId===courtId&&new Date(g.startsAt)>new Date()).sort((a,b)=>new Date(a.startsAt)-new Date(b.startsAt));}
-function roster(g){const players=g.players.map((id,index)=>({...people.find(p=>p.id===id),team:index%2?'B':'A'}));if(signedIn&&state.joined.includes(g.id))players.push({id:'you',name:state.profile.name,team:state.teams[g.id]||null});return players;}
+function roster(g){const players=g.players.map((id,index)=>({...people.find(p=>p.id===id),team:index%2?'B':'A'}));if(state.joined.includes(g.id))players.push({id:'you',name:state.profile.name,team:state.teams[g.id]||null});return players;}
 function gameCard(g){const c=courtById(g.courtId),count=roster(g).length;return `<article class="game-card"><p class="eyebrow">${esc(formatTime(g.startsAt))}</p><h3>${esc(g.title)}</h3><p class="location">${c.name} · ${c.city}</p><div class="chips"><span class="chip">${esc(g.level)}</span><span class="chip ${count===g.capacity?'':'green'}">${count}/${g.capacity} players</span>${signedIn&&state.teams[g.id]?`<span class="chip orange">Your team: ${esc(teamName(g.id,state.teams[g.id]))}</span>`:''}</div><button class="primary full" data-game="${g.id}">${signedIn&&state.joined.includes(g.id)?'Open game & team':'View scheduled game'} →</button></article>`;}
-let mapProbe=0;
-function renderMap(c){
- if(!c){mapProbe++;$('#map-fallback').hidden=true;$('#court-map').removeAttribute('src');$('#court-map').hidden=true;$('#map-label').textContent='No sample court selected';$('#map-external').href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(query||'basketball courts');return;}
- const url=`https://www.google.com/maps?q=${encodeURIComponent(c.address)}&z=15&output=embed`;
- if($('#court-map').getAttribute('src')!==url){
-  $('#court-marker').classList.remove('map-loaded');const probe=++mapProbe;$('#court-map').src=url;$('#court-map').hidden=true;$('#map-fallback').hidden=false;
-  $('#map-fallback').innerHTML=`<div class="locator-art" aria-hidden="true"><span>◉</span></div><div class="fallback-content"><span class="pill">OFFLINE LOCATOR · ILLUSTRATION</span><h3>${c.name}</h3><p>${c.address}</p><p class="map-state" role="status">Loading Google Maps · illustrative locator shown meanwhile</p><button class="secondary" id="show-embedded-map">Show Google Maps</button></div>`;
-  $('#show-embedded-map').onclick=()=>{$('#court-map').hidden=false;$('#map-fallback').hidden=true;};
-  fetch(url,{mode:'no-cors',credentials:'omit',signal:AbortSignal.timeout(6000)}).then(()=>{if(probe!==mapProbe)return;$('#court-map').hidden=false;$('#map-fallback').hidden=true;$('#court-marker').classList.add('map-loaded');}).catch(()=>{if(probe!==mapProbe)return;const message=$('#map-fallback .map-state');if(message)message.textContent='Offline locator illustration · not a street map. Open Google Maps for navigation.';});
- }
- $('#map-label').textContent=`${c.name} · ${c.city}`;$('#map-external').href=`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}`;
+let leafletMap=null,markerLayer=null,mapPopup=null,refreshClock=null;
+const markerNodes=new Map();
+const eligibleGames=id=>availableGames(games(),id,g=>roster(g).length,new Date(),whenFilter,styleFilter);
+function initMap(){
+ if(leafletMap)return;
+ leafletMap=L.map('court-map',{zoomControl:false,scrollWheelZoom:true}).setView([33.475,-112.02],12);
+ L.control.zoom({position:'bottomright'}).addTo(leafletMap);
+ const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'}).addTo(leafletMap);
+ let loaded=0;tiles.on('tileload',()=>{loaded++;$('#map-status').textContent='Pins = matching games with open roster spots · sample data';});
+ tiles.on('tileerror',()=>{if(!loaded)$('#map-status').textContent='Street tiles unavailable · pins use sample court coordinates. Open Google Maps for directions.';});
+ markerLayer=L.layerGroup().addTo(leafletMap);
+ leafletMap.on('popupclose',()=>{for(const marker of markerNodes.values())marker.getElement()?.setAttribute('aria-expanded','false');});
+ leafletMap.on('movestart',()=>{$('#refit-map').hidden=false;});
+ refreshClock=setInterval(()=>{if(tab==='discover'&&!$('#detail-dialog').open){const previous=selectedCourt,wasOpen=mapPopup?.isOpen();renderDiscover(false);if(wasOpen&&selectedCourt===previous&&eligibleGames(previous).length)courtPopup();}},60000);
 }
-function renderDiscover(){
+function fitResults(){const available=matchedCourts().filter(c=>eligibleGames(c.id).length);if(available.length)leafletMap.fitBounds(L.latLngBounds(available.map(c=>[c.lat,c.lng])),{padding:[65,85],maxZoom:15,animate:false});$('#refit-map').hidden=true;}
+function renderMap(c,fit=false){
+ initMap();markerLayer.clearLayers();markerNodes.clear();leafletMap.closePopup();
+ const candidates=matchedCourts().filter(c=>eligibleGames(c.id).length);
+ for(const court of candidates){
+  const marker=L.marker([court.lat,court.lng],{title:`${court.name}: ${eligibleGames(court.id).length} games with open spots`,alt:court.name,keyboard:true,icon:L.divIcon({className:'court-pin',html:pinLogo(),iconSize:[44,64],iconAnchor:[22,64],popupAnchor:[0,-64]})}).addTo(markerLayer);
+  markerNodes.set(court.id,marker);const el=marker.getElement();el.id=court.id===selectedCourt?'court-marker':'court-marker-'+court.id;el.dataset.courtId=court.id;el.setAttribute('role','button');el.setAttribute('aria-label','Select '+court.name);el.setAttribute('aria-expanded','false');
+  marker.on('click',()=>{selectedCourt=court.id;courtPopup();});el.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();e.stopPropagation();marker.fire('click');}});
+ }
+ $('#map-label').textContent=c?c.name+' · '+c.city:'No matching available court';$('#map-external').href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(c?.address||query||'basketball courts');
+ $('#court-map').dataset.selectedCourt=c?.id||'';
+ if(fit)fitResults();
+ requestAnimationFrame(()=>leafletMap.invalidateSize({pan:false}));
+ if(!candidates.length)$('#map-status').textContent='No matching scheduled games with open spots. No pins shown. Try another time, style, or area.';
+}
+function renderDiscover(fit=true){
  document.body.classList.toggle('map-mode',tab==='discover');
- const found=matchedCourts();if(!found.some(c=>c.id===selectedCourt))selectedCourt=found[0]?.id||null;
- const court=courtById(selectedCourt);renderMap(court);$('#area-title').textContent=coordinates?'Courts near you':query?`Courts around ${query}`:'Explore courts';$('#court-count').textContent=found.length+' found';
- $('#court-marker').hidden=!court;$('#court-marker').innerHTML=pinLogo();$('#court-marker').setAttribute('aria-label',court?'Select '+court.name:'Select court');
- $('#court-list').innerHTML=found.length?found.map(c=>`<article class="court-card ${c.id===selectedCourt?'selected':''}"><h3>${c.name}</h3><p class="location">${c.address}${coordinates?' · '+distance(c).toFixed(1)+' mi':''}</p><div class="chips"><span class="chip">${upcoming(c.id).length} scheduled games</span><span class="chip">Unverified venue</span></div><button class="primary full" data-map="${c.id}">Show on map</button></article>`).join(''):'<div class="empty"><h3>No sample courts here yet.</h3><p>Try Phoenix, Scottsdale, or Austin.</p><button class="secondary" data-reset>Explore Phoenix</button></div>';
- $('#court-popup').hidden=true;$('#court-marker').setAttribute('aria-expanded','false');
+ const found=matchedCourts(),available=found.filter(c=>eligibleGames(c.id).length);
+ if(!available.some(c=>c.id===selectedCourt))selectedCourt=available[0]?.id||null;
+ renderMap(courtById(selectedCourt),fit);$('#area-title').textContent=coordinates?'Courts near you':query?`Courts around ${query}`:'Explore courts';$('#court-count').textContent=available.length+' available';
+ $('#court-list').innerHTML=found.length?found.map(c=>{const open=eligibleGames(c.id).length;return `<article class="court-card ${c.id===selectedCourt?'selected':''}"><h3>${c.name}</h3><p class="location">${c.address}${coordinates?' · '+distance(c).toFixed(1)+' mi':''}</p><div class="chips"><span class="chip">${open?open+' matching games with open spots':'No matching scheduled spots'}</span><span class="chip">Sample data · venue unverified</span></div><button class="${open?'primary':'secondary'} full" ${open?'data-map':'data-court'}="${c.id}">${open?'Show available court':'Court details · no availability'}</button></article>`;}).join(''):'<div class="empty"><h3>No matching courts in this sample.</h3><p>Try Phoenix, Scottsdale, or Austin.</p><button class="secondary" data-reset>Explore Phoenix</button></div>';
 }
 function pinLogo(){return `<svg viewBox="0 0 100 150" aria-hidden="true"><path d="M50 6C24 6 8 25 8 48c0 21 25 73 34 90 4 8 12 8 16 0 9-17 34-69 34-90C92 25 76 6 50 6Z" fill="#f45422" stroke="#242321" stroke-width="7"/><circle cx="50" cy="47" r="25" fill="none" stroke="#242321" stroke-width="6"/><path d="M25 47h50M50 22v50M32 28c13 11 13 27 0 39M68 28C55 39 55 55 68 67" fill="none" stroke="#242321" stroke-width="5"/></svg>`;}
-function courtPopup(){const c=courtById(selectedCourt);if(!c)return;const runs=upcoming(c.id),spots=runs.reduce((n,g)=>n+g.capacity-roster(g).length,0);$('#court-popup').innerHTML=`<button class="popup-close" id="close-popup" aria-label="Close court popup">×</button><h2><button class="popup-title" data-court="${c.id}">${c.name} <span>›</span></button></h2><p>${c.city}, ${c.city==='Austin'?'TX':'AZ'}</p><div>${runs.length} ${runs.length===1?'Game':'Games'} · ${runs.length*2} Teams</div><p class="request-dot">${spots} roster spots · sample</p><button class="primary full" data-create="${c.id}">START A GAME</button>`;$('#court-popup').hidden=false;$('#court-marker').setAttribute('aria-expanded','true');$('#close-popup').onclick=()=>{$('#court-popup').hidden=true;$('#court-marker').setAttribute('aria-expanded','false');$('#court-marker').focus();};}
-function toggleSearch(open){if(open&&tab!=='discover'){tab='discover';render();}$('#map-search').hidden=!open;$('#search-toggle').setAttribute('aria-expanded',String(open));if(open){$('#court-popup').hidden=true;$('#location').focus();}}
+function courtPopup(){
+ const c=courtById(selectedCourt);if(!c||!eligibleGames(c.id).length)return;
+ const runs=eligibleGames(c.id),spots=runs.reduce((n,g)=>n+g.capacity-roster(g).length,0);
+ const content=document.createElement('div');content.id='court-popup';content.className='court-popup';content.setAttribute('role','region');content.setAttribute('aria-label',c.name+' available games');
+ content.innerHTML=`<button class="popup-close" id="close-popup" aria-label="Close court popup">×</button><h2><button class="popup-title" data-court="${c.id}">${c.name} <span>›</span></button></h2><p>${c.city}, ${c.city==='Austin'?'TX':'AZ'}</p><div>${runs.length} ${runs.length===1?'Game':'Games'} · ${runs.length*2} Teams</div><p class="request-dot">${spots} open roster spots · sample</p><p class="availability-note">Not live court occupancy</p><button class="primary full" data-create="${c.id}">START A GAME</button>`;
+ mapPopup=L.popup({closeButton:false,className:'bucketlist-map-popup',maxWidth:240,autoPanPadding:[25,85]}).setLatLng([c.lat,c.lng]).setContent(content).openOn(leafletMap);
+ for(const [id,marker] of markerNodes)marker.getElement()?.setAttribute('aria-expanded',String(id===c.id));
+ $('#close-popup').onclick=()=>{leafletMap.closePopup();markerNodes.get(c.id)?.getElement()?.focus();};
+}
+function toggleSearch(open){if(open&&tab!=='discover'){tab='discover';render();}$('#map-search').hidden=!open;$('#search-toggle').setAttribute('aria-expanded',String(open));if(open){leafletMap?.closePopup();$('#location').focus();}}
 function renderGames(){const mine=games().filter(g=>state.joined.includes(g.id)).sort((a,b)=>new Date(a.startsAt)-new Date(b.startsAt));$('#my-games-list').innerHTML=mine.length?mine.map(g=>gameCard(g)).join(''):'<div class="empty"><h3>Your crew is out there.</h3><p>Find a court and join a scheduled run. Pick your team before you arrive.</p><button class="secondary" data-go="discover">Find a court</button></div>';}
 function renderChats(){
  const courtChats=courts.filter(c=>state.groups.includes(c.id));const gameChats=games().filter(g=>state.joined.includes(g.id));
@@ -107,7 +132,7 @@ function renderProfile(){const p=state.profile;$('#profile-content').innerHTML=`
  $('#profile-form').onsubmit=e=>{e.preventDefault();const data=new FormData(e.target),name=data.get('name').trim();if(!name){$('#profile-error').textContent='Enter a display name.';return;}applyTheme(data.get('theme'));state.profile={name,bio:data.get('bio').trim(),level:data.get('level'),shareProfile:data.has('shareProfile'),shareStats:data.has('shareStats')};save();render();toast('Profile and visibility saved.');};$('#preview-profile').onclick=()=>openPlayer('you',true);$('#sign-out').onclick=()=>{signedIn=false;try{sessionStorage.removeItem('bucketlist-demo-session');}catch{}go('discover');toast('Signed out. Device-local demo data is retained.');};
 }
 function render(){document.body.classList.toggle('map-mode',tab==='discover');document.querySelectorAll('.screen').forEach(s=>s.hidden=s.id!==tab+'-screen');document.querySelectorAll('[data-tab]').forEach(b=>{if(b.dataset.tab===tab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});if(signedIn)$('#open-profile').textContent=state.profile.name.slice(0,2).toUpperCase();else $('#open-profile').innerHTML='<svg class="user-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3Z"/></svg>';$('#open-profile').setAttribute('aria-label',signedIn?'Your profile and privacy':'Sign in');if(tab==='discover')renderDiscover();if(tab==='games')renderGames();if(tab==='chats')renderChats();if(tab==='stats')renderStats();if(tab==='profile')renderProfile();}
-function go(next){if(next!=='discover'&&!requireSession(()=>go(next)))return;$('#app-menu').hidden=true;$('#menu-toggle').setAttribute('aria-expanded','false');toggleSearch(false);tab=next;render();window.scrollTo({top:0});}
+function go(next){if(next!=='discover'&&!requireSession(()=>go(next)))return;$('#app-menu').hidden=true;$('#menu-toggle').setAttribute('aria-expanded','false');toggleSearch(false);tab=next;render();window.scrollTo({top:0});if(next==='discover')requestAnimationFrame(()=>leafletMap?.invalidateSize());}
 function showDialog(label,html){$('#detail-dialog').classList.remove('court-info-dialog');$('#dialog-label').textContent=label;$('#details').innerHTML=html;const heading=$('#details h2');if(heading){heading.id='detail-title';heading.tabIndex=-1;$('#detail-dialog').setAttribute('aria-labelledby','detail-title');}if(!$('#detail-dialog').open)$('#detail-dialog').showModal();$('#detail-dialog').scrollTop=0;if(heading)heading.focus({preventScroll:true});}
 const levels=value=>['All levels','Beginner friendly','Intermediate','Competitive','Adaptive basketball'].map(l=>`<option ${l===value?'selected':''}>${l}</option>`).join('');
 function openCourt(id,section='games'){
@@ -133,7 +158,7 @@ function openGame(id,section='teams'){
 function chatMarkup(key,label){const messages=state.messages[key]||[];return `<p class="section-label">${label}</p><div class="messages" aria-label="${label} messages"><div class="message"><strong>BucketList · Demo notice</strong>Messages here stay in this browser. They are not sent to other players.</div>${messages.map(m=>`<div class="message own"><strong>${esc(state.profile.name)} · You</strong>${esc(m)}</div>`).join('')}</div><form class="chat-form" id="chat-form"><input aria-label="Message ${label.toLowerCase()}" placeholder="Coordinate the next run…" maxlength="500" required><button class="primary" type="submit">Send</button></form>`;}
 function bindChat(key,reopen){const form=$('#chat-form');if(!form)return;form.onsubmit=e=>{e.preventDefault();if(!requireSession(reopen))return;const value=form.querySelector('input').value.trim();if(!value)return;state.messages[key]=[...(state.messages[key]||[]),value].slice(-100);save();render();reopen();$('.messages').scrollTop=$('.messages').scrollHeight;$('#chat-form input').focus();};}
 function openPlayer(id,preview=false){
- const original=id==='you'?{...state.profile,id:'you',stats:statSummary(state.stats)}:people.find(p=>p.id===id);if(!original)return;const p=visiblePlayer(original,id==='you'&&!preview);const back=currentDialog?.type==='game'?{...currentDialog}:null;
+ const original=id==='you'?{...state.profile,id:'you',stats:statSummary(state.stats)}:people.find(p=>p.id===id);if(!original)return;const p=visiblePlayer(original,id==='you'&&signedIn&&!preview);const back=currentDialog?.type==='game'?{...currentDialog}:null;
  showDialog(preview?'YOUR PUBLIC PREVIEW':'PLAYER PROFILE',`<div class="profile-hero"><span class="avatar">${esc(p.name.slice(0,2).toUpperCase())}</span><div><h2>${esc(p.name)}</h2><p class="muted">${id==='you'?'Your profile preview':'Fictional demo player'}</p></div></div>${p.profileVisible?`<p class="section-label">About the player</p><p class="detail-subtitle">${esc(p.bio||'No bio added.')}</p><span class="chip">${esc(p.level||'Not specified')}</span>`:'<div class="privacy-box">Profile details are private. This player has not chosen to share them.</div>'}${p.statsVisible?`<p class="section-label">Self-reported stats</p>${statTiles(p.stats||statSummary([]))}`:'<div class="privacy-box">Stats are private. This player has not chosen to share them.</div>'}${back?'<button class="secondary full" id="back-to-game">← Back to game</button>':''}<p class="note">Public previews honor each sharing setting independently. This is a local UI demonstration; production privacy requires server-side authorization.</p>`);
  if(back)$('#back-to-game').onclick=()=>openGame(back.id,back.section);
 }
@@ -153,11 +178,11 @@ document.addEventListener('click',e=>{
  if(button.dataset.game)openGame(button.dataset.game,button.dataset.gameTab||'teams');
  if(button.dataset.create)createGame(button.dataset.create);
  if(button.dataset.player)openPlayer(button.dataset.player);
- if(button.hasAttribute('data-reset')){coordinates=null;query='Phoenix';$('#location').value=query;go('discover');}
+ if(button.hasAttribute('data-reset')){coordinates=null;query='Phoenix';whenFilter='upcoming';styleFilter='Any style';$('#when-filter').value=whenFilter;$('#style-filter').value=styleFilter;$('#location').value=query;go('discover');}
  if(button.dataset.deleteStat){state.stats=state.stats.filter(s=>s.id!==button.dataset.deleteStat);save();renderStats();toast('Session deleted.');}
 });
 $('#search-form').onsubmit=e=>{e.preventDefault();query=$('#location').value.trim();coordinates=null;renderDiscover();$('#location-status').textContent='Sample court search. The map shows the selected venue; it does not indicate live players.';};
-$('#locate').onclick=()=>{if(!navigator.geolocation){$('#location-status').textContent='Location unavailable. Search a city instead.';return;}$('#locate').disabled=true;$('#location-status').textContent='Getting your location…';navigator.geolocation.getCurrentPosition(pos=>{coordinates={lat:pos.coords.latitude,lng:pos.coords.longitude};$('#location').value='Near me';renderDiscover();$('#location-status').textContent='Sample courts within 30 miles. Your coordinates stay in memory and are not sent to Google; only the selected public court address is used.';$('#locate').disabled=false;},()=>{$('#location-status').textContent='Couldn’t get your location. Search a city or court instead.';$('#locate').disabled=false;},{timeout:10000,maximumAge:60000});};
+$('#locate').onclick=()=>{if(!navigator.geolocation){$('#location-status').textContent='Location unavailable. Search a city instead.';return;}$('#locate').disabled=true;$('#location-status').textContent='Getting your location…';navigator.geolocation.getCurrentPosition(pos=>{coordinates={lat:pos.coords.latitude,lng:pos.coords.longitude};$('#location').value='Near me';renderDiscover();$('#location-status').textContent='Sample courts within 30 miles. Your coordinates stay in memory for filtering. Street tiles load from OpenStreetMap; Google opens only for directions.';$('#locate').disabled=false;},()=>{$('#location-status').textContent='Couldn’t get your location. Search a city or court instead.';$('#locate').disabled=false;},{timeout:10000,maximumAge:60000});};
 $('#start-game').onclick=()=>createGame();$('#schedule-from-games').onclick=()=>createGame();$('#log-stats').onclick=logStats;$('#open-profile').onclick=()=>signedIn?go('profile'):openLogin(()=>go('profile'));$('#close-dialog').onclick=()=>$('#detail-dialog').close();
 $('#detail-dialog').addEventListener('click',e=>{if(e.target===$('#detail-dialog')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close();}});
 render();
@@ -171,9 +196,9 @@ document.addEventListener('keydown',e=>{const current=e.target.closest('[role="t
 $('#menu-toggle').onclick=()=>{const open=$('#app-menu').hidden;$('#app-menu').hidden=!open;$('#menu-toggle').setAttribute('aria-expanded',String(open));};
 $('#search-toggle').onclick=()=>toggleSearch($('#map-search').hidden);
 $('#close-search').onclick=()=>toggleSearch(false);
-$('#court-marker').onclick=courtPopup;
+$('#refit-map').onclick=fitResults;$('#when-filter').onchange=e=>{whenFilter=e.target.value;renderDiscover();};$('#style-filter').onchange=e=>{styleFilter=e.target.value;renderDiscover();};
 document.querySelectorAll('.logo-slot').forEach(el=>el.innerHTML=pinLogo());
 document.querySelector('.brand').onclick=e=>{e.preventDefault();go('discover');};
 
-document.addEventListener('keydown',e=>{if(e.key!=='Escape'||$('#detail-dialog').open)return;if(!$('#app-menu').hidden){$('#app-menu').hidden=true;$('#menu-toggle').setAttribute('aria-expanded','false');$('#menu-toggle').focus();}else if(!$('#map-search').hidden){toggleSearch(false);$('#search-toggle').focus();}else if(!$('#court-popup').hidden){$('#court-popup').hidden=true;$('#court-marker').setAttribute('aria-expanded','false');$('#court-marker').focus();}});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape'||$('#detail-dialog').open)return;if(!$('#app-menu').hidden){$('#app-menu').hidden=true;$('#menu-toggle').setAttribute('aria-expanded','false');$('#menu-toggle').focus();}else if(!$('#map-search').hidden){toggleSearch(false);$('#search-toggle').focus();}else if($('#court-popup')){leafletMap?.closePopup();markerNodes.get(selectedCourt)?.getElement()?.focus();}});
 document.addEventListener('click',e=>{if(!$('#app-menu').hidden&&!e.target.closest('#app-menu, #menu-toggle')){$('#app-menu').hidden=true;$('#menu-toggle').setAttribute('aria-expanded','false');}});
