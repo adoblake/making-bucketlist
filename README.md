@@ -50,11 +50,21 @@ Tap **Explore 90-day player demo** on the map or in the menu. It opens the ficti
 
 Showcase state is stored separately from your personal demo state. Its edits survive reloads. **Exit showcase · restore my data** in the menu returns to your preserved personal data. **Restart populated showcase** deliberately restores its starting sample. No fictional performance, attendance, or conversation represents a real person or reservation.
 
-## Finding basketball parks beyond the samples
+## Where the courts come from
 
-Search a city or destination, then use **Find mapped basketball parks in this area**. This queries OpenStreetMap via Nominatim and Overpass for parks that contain tagged basketball features, within roughly 10 miles of the searched center. Known parks remain selectable without an app game. A sample no-game venue is Cielito Park; it demonstrates starting the first game at a park.
+**Phoenix now opens with 125 basketball locations**, backed by the City of Phoenix Parks and Recreation public GIS. The bundled snapshot preserves all **155 individual court records** and adds parks whose city record lists basketball without a separate court point. Case differences and known naming aliases are merged. These are real city-directory locations; the games, people, and showcase remain fictional.
 
-This is not a guaranteed worldwide list of every physical park. Untagged basketball courts, unmodeled park boundaries, private access, and missing map data can create omissions. Location lookup responded during validation, but external Overpass queries returned HTTP 406 or timed out, so live directory results could not be verified here. Provider integration is exercised with fixture responses and has explicit incomplete-result/error handling; do not describe fixture tests as a successful live lookup. When live lookup fails, the UI keeps saved/demo venues and says the directory is incomplete. Venue hours, access, and conditions remain unverified.
+The original issue was that only five starter venues were bundled and additional results depended on an unreliable Overpass query. Phoenix no longer depends on that query: its directory is part of the app build and offline shell, with no extra button required. Search lists all 125 Phoenix entries, and map clusters expand as you zoom. A selected court keeps its orange pin; neighboring pins are grouped to avoid overlap. Parks remain selectable without a game.
+
+Court details show the city source, retrieval date, mapped court count, address, and listed amenities. Coordinates come from actual city basketball points when available; supplemental entries explicitly say **park record**. Source listings do not confirm current access, maintenance, hours, reservations, or live occupancy.
+
+Sources: [City public GIS](https://services.arcgis.com/cfKakmeHE95cgeEK/arcgis/rest/services/ParksOpenData/FeatureServer), basketball layer **0**, park layer **10**; ArcGIS item owned by **City_of_Phoenix**. `public/data/phoenix-courts.js` records retrieval metadata and the public source URL. Update it using `npm run refresh:courts`, then rebuild/publish. The refresh was exercised against the real service and returned 125 locations/155 court records. Node 24's environment-proxy support is used automatically when available; it does not disable TLS verification.
+
+Coverage is currently strongest for **Phoenix city limits**. Scottsdale/Austin retain starter venues; other cities use the optional OpenStreetMap/Overpass lookup. That external lookup has returned errors/timeouts and is not guaranteed complete. This release does not claim complete coverage of all metro cities or the world. Existing cached court references, saved games, and chat groups are preserved when a duplicate location gets a city-backed entry.
+
+| All Phoenix locations | Search directory | City-backed court details |
+| --- | --- | --- |
+| ![Map clusters](docs/phoenix-courts.png) | ![Directory](docs/phoenix-directory.png) | ![Court source](docs/phoenix-court-details.png) |
 
 ## What you can try
 
@@ -63,7 +73,7 @@ This is not a guaranteed worldwide list of every physical park. Untagged basketb
 - **Chat:** separate court-community and game-group conversations, plus a central chat list.
 - **My stats:** log and delete personal session records for points, rebounds, and assists; see self-reported averages and history.
 - **Profiles:** open a player from a roster. Fictional examples demonstrate public and private profiles/stats. Your profile details and stats have independent sharing settings, both off by default; preview what others would see. Display names remain visible on rosters.
-- **Appearance:** use the hamburger-menu toggle or select Light, Dark, or Use device setting in Profile, then save. Themes persist. The street basemap retains its readable provider styling in both themes.
+- **Appearance:** use the hamburger-menu toggle or select Light, Dark, or Use device setting in Profile, then save. Themes persist. The street basemap retains its readable provider styling in both themes. The map footer credits OpenStreetMap tiles; Phoenix location details separately credit the city directory.
 
 ## Screenshots
 
@@ -106,9 +116,9 @@ If no Chromium is installed, run `npx playwright install chromium` and omit `BRO
 
 ## Maps and privacy boundaries
 
-The map uses Leaflet 1.9.4 and OpenStreetMap street tiles with visible attribution, custom geographic basketball pins, pan/zoom, auto-panning popups, and fit-to-results. Google Maps directions open only when requested. No Maps API key is required for this prototype. A custom Google-powered map can replace this provider when the required API configuration is supplied. Public OSM tiles have a usage policy and no app-specific uptime guarantee; production must provision an appropriate provider.
+The map uses Leaflet 1.9.4, Leaflet.markercluster 1.5.3, and OpenStreetMap street tiles with visible attribution, custom geographic basketball pins, pan/zoom, auto-panning popups, and fit-to-results. Google Maps directions open only when requested. No Maps API key is required for this prototype. A custom Google-powered map can replace this provider when the required API configuration is supplied. Public OSM tiles have a usage policy and no app-specific uptime guarantee; production must provision an appropriate provider.
 
-Court coordinates, access, hours, and conditions remain sample/unverified. All basketball parks is the default directory mode. The separate Games with open spots mode uses future scheduled games and selected day/style. Neither mode claims live court occupancy. Self-reported sample availability is not a court reservation. Known courts without matching available games remain in the results list without a pin.
+Phoenix coordinates and amenity labels come from city records; starter-venue coordinates elsewhere remain unverified. Current access, hours, occupancy, and conditions are not verified. All basketball parks is the default directory mode. The separate Games with open spots mode uses future scheduled games and selected day/style. Neither mode claims live court occupancy. Self-reported sample availability is not a court reservation. Known courts without matching available games remain in the results list without a pin.
 
 Precise user coordinates stay in memory for local filtering. Normal map viewport tile requests go to OpenStreetMap; opening directions sends the chosen public venue to Google. Stats/profile visibility remains a local UI demonstration, not server authorization. Real privacy, team reservations, and message delivery require authenticated shared storage.
 

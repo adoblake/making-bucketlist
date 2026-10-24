@@ -31,3 +31,7 @@ Verified court data and live event capacity, authenticated shared storage, fresh
 ## Latest revision
 
 All basketball parks is now the default. Existing parks remain selectable without games. Games with open spots retains the earlier stricter filter. OpenStreetMap/Nominatim/Overpass supply an optional mapped-park directory; missing tags/boundaries and service failures prevent a claim of exhaustive global coverage. The separately stored 90-day showcase labels all performance and social data as fictional and preserves user-created personal data.
+
+## Phoenix source correction
+
+The five-record bootstrap was insufficient. The app now bundles all 155 records from the City of Phoenix Basketball Courts layer and supplements them with park records explicitly listing basketball, normalized to 125 locations. The source is https://services.arcgis.com/cfKakmeHE95cgeEK/arcgis/rest/services/ParksOpenData/FeatureServer (layers 0 and 10), discovered through the ArcGIS item owned by City_of_Phoenix and fetched successfully. This replaces the Overpass dependency for the initial Phoenix experience. It does not assert all-city/global coverage. Leaflet.markercluster groups nearby courts with count labels, and the search list provides direct access to each location. Source dates and amenities appear in court details.

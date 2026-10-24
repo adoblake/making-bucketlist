@@ -14,7 +14,9 @@
     "build:web": "npm run build && node scripts/build-web.mjs",
     "test:phone": "node tests/phone.cjs",
     "publish:web": "npm run build:web && node scripts/publish-web.mjs",
-    "preview:web": "node scripts/preview-web.mjs"
+    "preview:web": "node scripts/preview-web.mjs",
+    "refresh:courts": "node scripts/refresh-courts.mjs",
+    "test:courts": "node tests/courts.cjs"
   },
   "engines": {
     "node": ">=22"
@@ -24,6 +26,7 @@
     "qrcode": "1.5.4"
   },
   "dependencies": {
-    "leaflet": "1.9.4"
+    "leaflet": "1.9.4",
+    "leaflet.markercluster": "1.5.3"
   }
 }

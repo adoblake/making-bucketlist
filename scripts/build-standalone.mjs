@@ -12,9 +12,16 @@ const domain=(await readFile(new URL('../public/domain.js',import.meta.url),'utf
 const directory=(await readFile(new URL('../public/directory.js',import.meta.url),'utf8')).replace(/^export /gm,'');
 const demo=(await readFile(new URL('../public/demo.js',import.meta.url),'utf8')).replace(/^export /gm,'');
 const schedule=(await readFile(new URL('../public/schedule.js',import.meta.url),'utf8')).replace(/^export /gm,'');
+const cityData=(await readFile(new URL('../public/city-data.js',import.meta.url),'utf8')).replace(/^export /gm,'');
+const phoenixData=(await readFile(new URL('../public/data/phoenix-courts.js',import.meta.url),'utf8')).replace(/^export /gm,'');
+const clustersJS=await readFile(new URL('../public/vendor/markercluster/leaflet.markercluster.js',import.meta.url),'utf8');
+const clustersCSS=await readFile(new URL('../public/vendor/markercluster/MarkerCluster.css',import.meta.url),'utf8');
+const clustersLicense=await readFile(new URL('../public/vendor/markercluster/MIT-LICENCE.txt',import.meta.url),'utf8');
+html=html.replace('<link rel="stylesheet" href="/markercluster.css">','<style>'+clustersCSS+'</style>').replace('<script src="/markercluster.js"></script>','<script>'+clustersJS+'</script>');
 const app=(await readFile(new URL('../public/app.js',import.meta.url),'utf8')).replace(/^import .*?;\n/gm,'');
-html=html.replace('<link rel="stylesheet" href="/leaflet.css">','<style>'+leafletCSS+'</style>').replace('<script src="/leaflet.js"></script>','<script>'+leafletJS.replaceAll('</script','<\\/script')+'</script>').replace('<link rel="stylesheet" href="/styles.css">','<style>'+css+'</style>').replace('<script type="module" src="/app.js"></script>','').replace('</body>','<script>'+domain+'\n'+directory+'\n'+demo+'\n'+schedule+'\n'+app+'</script></body>');
+html=html.replace('<link rel="stylesheet" href="/leaflet.css">','<style>'+leafletCSS+'</style>').replace('<script src="/leaflet.js"></script>','<script>'+leafletJS.replaceAll('</script','<\\/script')+'</script>').replace('<link rel="stylesheet" href="/styles.css">','<style>'+css+'</style>').replace('<script type="module" src="/app.js"></script>','').replace('</body>','<script>'+domain+'\n'+directory+'\n'+demo+'\n'+schedule+'\n'+cityData+'\n'+phoenixData+'\n'+app+'</script></body>');
 html='<!-- Leaflet 1.9.4 license\n'+await readFile(new URL('../public/vendor/leaflet/LICENSE',import.meta.url),'utf8')+'\n-->\n'+html;
+html='<!-- Leaflet.markercluster MIT license\n'+clustersLicense+'\n-->\n'+html;
 html=html.replace(/\r\n/g,'\n').replace(/[ \t]+$/gm,'');
 await writeFile(new URL('../BucketList.html',import.meta.url),html);
 console.log('Built BucketList.html: standalone app with embedded styles and scripts. Street map tiles require Internet; Google directions open externally.');
