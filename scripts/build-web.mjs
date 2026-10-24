@@ -1,0 +1,16 @@
+import {readFile,writeFile,mkdir,copyFile,rm} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import QRCode from 'qrcode';
+const root=new URL('../',import.meta.url),out=new URL('web-dist/',root);
+await rm(out,{recursive:true,force:true});await mkdir(new URL('icons/',out),{recursive:true});
+let html=await readFile(new URL('BucketList.html',root),'utf8');
+for(const name of ['bucketlist.svg','icon-180.png','icon-192.png','icon-512.png'])await copyFile(new URL('public/icons/'+name,root),new URL('icons/'+name,out));
+html=html.replace(/<link rel="apple-touch-icon"[^>]*>/,'<link rel="apple-touch-icon" href="./icons/icon-180.png">');
+html=html.replaceAll('href="/icons/','href="./icons/').replace('<head>','<head><link rel="manifest" href="./manifest.webmanifest">');
+html=html.replace('</body>',`<script>if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}</script></body>`);
+await writeFile(new URL('index.html',out),html);await writeFile(new URL('.nojekyll',out),'');
+await writeFile(new URL('manifest.webmanifest',out),JSON.stringify({id:'./',name:'Bucketlist — Let’s Play.',short_name:'Bucketlist',description:'Find basketball parks and explore a pickup-game community demo.',start_url:'./',scope:'./',display:'standalone',background_color:'#101111',theme_color:'#000000',icons:[{src:'./icons/icon-192.png',sizes:'192x192',type:'image/png',purpose:'any'},{src:'./icons/icon-512.png',sizes:'512x512',type:'image/png',purpose:'any'}]},null,2));
+await QRCode.toFile(new URL('share-qr.png',out).pathname,'https://adoblake.github.io/making-bucketlist/',{width:600,margin:3,errorCorrectionLevel:'M',color:{dark:'#000000',light:'#ffffff'}});
+const version=createHash('sha256').update(html).digest('hex').slice(0,12);
+await writeFile(new URL('sw.js',out),`const CACHE='bucketlist-${version}';const FILES=['./','./index.html','./manifest.webmanifest','./icons/icon-180.png','./icons/icon-192.png','./icons/icon-512.png','./icons/bucketlist.svg','./share-qr.png'];self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('bucketlist-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||new URL(e.request.url).origin!==self.location.origin)return;if(e.request.mode==='navigate'){e.respondWith(fetch(e.request).then(r=>{if(r.ok){const copy=r.clone();e.waitUntil(caches.open(CACHE).then(c=>c.put('./index.html',copy)));}return r;}).catch(()=>caches.match('./index.html')));return;}e.respondWith(caches.match(e.request).then(hit=>hit||fetch(e.request)));});`);
+console.log('Built web-dist with install manifest, branded icons, QR code and offline shell.');

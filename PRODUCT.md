@@ -58,3 +58,9 @@ The supplied orange basketball pin now belongs to real map coordinates, using Le
 The latest direction supersedes the game-only default: basketball parks are selectable even without a scheduled game. All basketball parks is the default; Games with open spots is a separate filter. Live directory lookup uses OSM parks and contained basketball features around a searched location. No global completeness or live provider success is claimed; provider errors/timeouts remain an external limitation, while fixture integration and failure handling are tested.
 
 A separately stored fictional 90-day player showcase demonstrates 24 stat-linked completed sessions, three upcoming games, named teams, three court groups, personal stats/averages/progress, profile visibility, and multi-person demo conversations. The user can return to preserved personal state or deliberately restart the sample.
+
+## Phone sharing, scheduling, and profile conversion
+
+The reference date/time selection replaces datetime-local with a seven-day strip, grouped selectable ranges, duration, timezone, and explicit confirmation. Game form drafts survive cancel/change, and end times persist. Guest browsing retains the core place/game value, while player identities and personal/social actions are gated behind a benefits-led local profile prompt. The populated showcase remains a way to try the offered features.
+
+An installable mobile web package adds the two-color orange/charcoal basketball-pin icon, manifest, iOS home-screen image, own-origin offline shell, QR and sharing. The gh-pages site branch is published. An initial activation attempt through the integration returned 403; the public site subsequently became available and was verified to serve the exact latest build, with manifest, service worker, icon, and QR assets returning 200. Public link: https://adoblake.github.io/making-bucketlist/ . Shared cross-device data and real authentication remain production work.

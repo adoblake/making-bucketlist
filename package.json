@@ -9,13 +9,19 @@
     "test": "node --test",
     "build": "node scripts/build-standalone.mjs",
     "test:browser": "node tests/browser.cjs",
-    "test:showcase": "node tests/showcase.cjs"
+    "test:showcase": "node tests/showcase.cjs",
+    "test:calendar": "node tests/calendar.cjs",
+    "build:web": "npm run build && node scripts/build-web.mjs",
+    "test:phone": "node tests/phone.cjs",
+    "publish:web": "npm run build:web && node scripts/publish-web.mjs",
+    "preview:web": "node scripts/preview-web.mjs"
   },
   "engines": {
     "node": ">=22"
   },
   "devDependencies": {
-    "playwright": "1.64.1"
+    "playwright": "1.64.1",
+    "qrcode": "1.5.4"
   },
   "dependencies": {
     "leaflet": "1.9.4"

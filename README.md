@@ -2,6 +2,36 @@
 
 A mobile web prototype for **find a court → join a scheduled game → set up your team → coordinate and play**. It opens automatically to the full-screen court map, following the supplied mobile reference: hamburger navigation, basketball-pin marker, compact court popup, expandable court/game panels, and Stats / Search / Chat navigation. The orange/black/white design system carries through the app, with light/dark/device themes.
 
+## Put it on your phone
+
+**Open on your phone: https://adoblake.github.io/making-bucketlist/**
+
+The public site and its manifest, service worker, app icon, and QR image return HTTP 200. The hosted HTML was verified to match the current build. [QR code for showing/printing](docs/share-qr.png). Site files are published on the **gh-pages** branch.
+
+- **iPhone:** open the HTTPS link in Safari → Share → Add to Home Screen. Enable Open as Web App if offered.
+- **Android:** open in Chrome → menu → Install app / Add to Home screen.
+- **Icon:** the same basketball pin used in the app, with only orange and charcoal; no lettering. PNG sizes support home screens, with an SVG favicon for browser tabs.
+- **Sharing:** menu → Share app · show QR. Native share and copy-link controls help pass it around in person.
+- **Offline:** after a successful first visit, the app shell and local showcase can reopen offline. Maps and live park search still need Internet. The service worker only caches this app's own files, not external map tiles or directory requests.
+
+The hosted phone test was attempted, but this cloud Chromium rejected the environment’s HTTPS proxy certificate. TLS verification was not disabled. Public HTTPS responses were independently verified using the environment’s trusted CA bundle, and mobile subpath/manifest/offline behavior passed against the same build on a local test server. A physical iPhone/Android installation has not been tested.
+
+This is an installable mobile web demo, not an App Store build. Each phone has its own browser-local data. Chat, reservations, and profiles are not synchronized between phones.
+
+To verify the built phone package locally: run `npm run build:web`, then `npm run preview:web` in a separate terminal, then `npm run test:phone` (set `BROWSER_EXECUTABLE` when using a system Chromium). The default test checks the same repository subpath used by Pages, including offline service-worker reload.
+
+To update the site from the source checkout, run `npm ci` then `npm run publish:web`. This builds the standalone/PWA artifacts and pushes the site to the existing gh-pages branch without force-pushing. Pages is now serving the site. If it ever needs reconfiguration, use repository Settings → Pages → Deploy from a branch → gh-pages / (root).
+
+## Calendar and guest-profile flow
+
+Game creation uses a seven-day date strip, previous/next week, optional date jump (180-day planning horizon), Morning/Afternoon/Evening lists, and 30-minute start intervals. Choose a 30/60/90/120-minute duration, confirm the time range, and review it in the game form. Back/cancel preserves form fields and the previously confirmed time. Past times are hidden/rejected; month/year/leap-day and DST boundaries are tested. Times explicitly use the device's timezone, not an inferred park timezone. Start/end instants and duration persist and appear in game views. Proposed ranges are not court reservations or verified park hours.
+
+Guests can browse parks, basic game details, play style, and roster counts. Player identities, personal stats, team participation, and messages require a local demo profile. Contextual prompts explain crew/team continuity, chat, stats, and privacy; a populated showcase can be explored before creating a profile. The prototype profile is saved only in the browser and is not a secure online account. Production enforcement needs authenticated server authorization.
+
+| Light time picker | Dark time picker | Profile benefits |
+| --- | --- | --- |
+| ![Time picker](docs/time-picker-light.png) | ![Dark picker](docs/time-picker-dark.png) | ![Profile benefits](docs/profile-benefits.png) |
+
 ## Open it without installing anything
 
 Choose **Code → Download ZIP** on GitHub, extract the archive, and open **BucketList.html** in your browser. The styles and scripts are included in that file. Street map tiles need Internet access. The map uses Leaflet/OpenStreetMap so our basketball pins can be geographically anchored. Google Maps remains available for directions. If tiles are blocked, a status message explains that the pins use sample coordinates; no fake street geography is shown.

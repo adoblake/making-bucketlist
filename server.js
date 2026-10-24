@@ -1,6 +1,6 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
-const assets = {'/directory.js':['directory.js','text/javascript'], '/demo.js':['demo.js','text/javascript'], '/leaflet.js':['vendor/leaflet/leaflet.js','text/javascript'], '/leaflet.css':['vendor/leaflet/leaflet.css','text/css'], '/':['index.html','text/html'], '/app.js':['app.js','text/javascript'], '/domain.js':['domain.js','text/javascript'], '/styles.css':['styles.css','text/css']};
+const assets = {'/icons/bucketlist.svg':['icons/bucketlist.svg','image/svg+xml'], '/icons/icon-180.png':['icons/icon-180.png','image/png'], '/icons/icon-192.png':['icons/icon-192.png','image/png'], '/icons/icon-512.png':['icons/icon-512.png','image/png'], '/schedule.js':['schedule.js','text/javascript'], '/directory.js':['directory.js','text/javascript'], '/demo.js':['demo.js','text/javascript'], '/leaflet.js':['vendor/leaflet/leaflet.js','text/javascript'], '/leaflet.css':['vendor/leaflet/leaflet.css','text/css'], '/':['index.html','text/html'], '/app.js':['app.js','text/javascript'], '/domain.js':['domain.js','text/javascript'], '/styles.css':['styles.css','text/css']};
 const server = http.createServer(async (req,res) => {
   const asset = assets[new URL(req.url,'http://localhost').pathname];
   if (!asset) {res.writeHead(404);res.end('Not found');return;}
