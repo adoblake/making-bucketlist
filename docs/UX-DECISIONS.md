@@ -6,7 +6,7 @@ The basketball-pin silhouette from the supplied reference remains the primary co
 
 - Geographic anchoring: Leaflet anchors the pin's bottom tip to the sample latitude/longitude and moves it with pan/zoom. Popups share that geographic anchor and auto-pan into view.
 - Search and map agree: location, day, and play-style filters drive the same candidate list. The default view fits matching available courts; **Show results** returns to them after panning. Panning does not silently change the search area.
-- Availability: a pin requires at least one future, non-cancelled, matching game with remaining roster capacity. A full/expired game does not create a pin. Pins disappear when no games match. A known venue without a matching spot remains inspectable in the list without an availability icon.
+- Game-only filter (superseded as the default by All basketball parks): a pin requires at least one future, non-cancelled, matching game with remaining roster capacity. A full/expired game does not create a pin. Pins disappear when no games match. A known venue without a matching spot remains inspectable in the list without an availability icon.
 - Meaning: “available” means an open scheduled roster spot in the local sample, not verified court occupancy, booking, or access. All venues remain unverified. Adaptive basketball matches only explicitly adaptive games; All levels games also match other play styles.
 - Touch and keyboard: 44 × 64 pixel marker targets; accessible court names; Enter/Space selection; visible focus; Escape dismissal; controls independent of color. This is implementation guidance, not a claim of full WCAG conformance.
 - Public map → contextual court/game details → sign-in at the action. Court and game chats remain separate. Profile and stats sharing are still independently opt-in.
@@ -27,3 +27,7 @@ These standard references identify the conventions used. Their web pages could n
 ## Remaining production needs
 
 Verified court data and live event capacity, authenticated shared storage, fresh availability timestamps/cancellations, provider-approved production tiles or Maps SDK integration, device testing, and backend-enforced privacy. Demo sign-in and device-local membership do not provide account security or shared reservations.
+
+## Latest revision
+
+All basketball parks is now the default. Existing parks remain selectable without games. Games with open spots retains the earlier stricter filter. OpenStreetMap/Nominatim/Overpass supply an optional mapped-park directory; missing tags/boundaries and service failures prevent a claim of exhaustive global coverage. The separately stored 90-day showcase labels all performance and social data as fictional and preserves user-created personal data.

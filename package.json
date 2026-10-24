@@ -8,7 +8,8 @@
     "start": "node server.js",
     "test": "node --test",
     "build": "node scripts/build-standalone.mjs",
-    "test:browser": "node tests/browser.cjs"
+    "test:browser": "node tests/browser.cjs",
+    "test:showcase": "node tests/showcase.cjs"
   },
   "engines": {
     "node": ">=22"

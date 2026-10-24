@@ -10,9 +10,21 @@ This is a local prototype, not a native iOS/Android release or a multiplayer ser
 
 ## Opening sequence
 
-The app always opens in map mode, with no marketing page or mandatory profile form. The initial map fits the available sample Phoenix courts, with Pierce Park initially selected. Orange pins appear only for matching courts with scheduled roster spots. Tap its basketball pin, then tap the court name in the popup for court details, games, and teams. The popup and bottom bar both offer **Start a game**. Time and play-style filters remove pins for full, past, cancelled, or nonmatching games; no match means no pin. Availability here does not mean verified live court occupancy. Search opens a court-search overlay with time/play-style filters. My Games, Profile, and the theme toggle are in the hamburger menu.
+The app always opens in map mode, with no marketing page or mandatory profile form. The initial map fits the available sample Phoenix courts, with Pierce Park initially selected. The default **All basketball parks** mode keeps parks selectable even when no games are scheduled. **Games with open spots** is a separate optional filter. Tap its basketball pin, then tap the court name in the popup for court details, games, and teams. The popup and bottom bar both offer **Start a game**. In Games with open spots mode, time and play-style filters remove pins for full, past, cancelled, or nonmatching games. In All basketball parks mode, game availability does not hide a venue. Availability here does not mean verified live court occupancy. Search opens a court-search overlay with time/play-style filters. My Games, Profile, and the theme toggle are in the hamburger menu.
 
 Guests can browse public court/game details. Joining a team, organizing a game, accessing personal screens, and chatting require the clearly labeled **local demo sign-in**. Enter a display name to exercise that sequence, or continue browsing. No account is created, no password is collected, and there is no authentication server. A tab-scoped demo session survives reloads; sign-out is in Profile. Device-local data is retained after sign-out. This UI gate is not a security boundary.
+
+## Explore the populated showcase
+
+Tap **Explore 90-day player demo** on the map or in the menu. It opens the fictional Marcus Rivera profile with 24 self-reported sessions over roughly three months, a progress chart and first/latest-session averages, 1,320 demonstration minutes, three named teams, three court communities, upcoming games, completed session details, and group conversations with fictional participants. Jump from stats to games, chats, or profile.
+
+Showcase state is stored separately from your personal demo state. Its edits survive reloads. **Exit showcase · restore my data** in the menu returns to your preserved personal data. **Restart populated showcase** deliberately restores its starting sample. No fictional performance, attendance, or conversation represents a real person or reservation.
+
+## Finding basketball parks beyond the samples
+
+Search a city or destination, then use **Find mapped basketball parks in this area**. This queries OpenStreetMap via Nominatim and Overpass for parks that contain tagged basketball features, within roughly 10 miles of the searched center. Known parks remain selectable without an app game. A sample no-game venue is Cielito Park; it demonstrates starting the first game at a park.
+
+This is not a guaranteed worldwide list of every physical park. Untagged basketball courts, unmodeled park boundaries, private access, and missing map data can create omissions. Location lookup responded during validation, but external Overpass queries returned HTTP 406 or timed out, so live directory results could not be verified here. Provider integration is exercised with fixture responses and has explicit incomplete-result/error handling; do not describe fixture tests as a successful live lookup. When live lookup fails, the UI keeps saved/demo venues and says the directory is incomplete. Venue hours, access, and conditions remain unverified.
 
 ## What you can try
 
@@ -60,17 +72,23 @@ PORT=3090 npm start
 APP_URL=http://127.0.0.1:3090 BROWSER_EXECUTABLE=/usr/bin/chromium npm run test:browser
 ```
 
-If no Chromium is installed, run `npx playwright install chromium` and omit `BROWSER_EXECUTABLE`. The browser suite checks automatic map opening, guest browsing, local-demo sign-in gates/cancel/resume/sign-out, and team switching/naming, separate chats, profile visibility, stats, persistence, destination search, themes, responsive overflow, and the standalone artifact. Marker projection, keyboard activation, pan/refit, and availability filters are checked; external tile availability is not asserted because the cloud environment blocks the tile provider.
+If no Chromium is installed, run `npx playwright install chromium` and omit `BROWSER_EXECUTABLE`. The browser suite checks automatic map opening, guest browsing, local-demo sign-in gates/cancel/resume/sign-out, and team switching/naming, separate chats, profile visibility, stats, persistence, destination search, themes, responsive overflow, and the standalone artifact. Run `APP_URL=http://127.0.0.1:3092 BROWSER_EXECUTABLE=/usr/bin/chromium npm run test:showcase` with a server on 3092 for the populated-showcase and fixture-directory regression. Marker projection, keyboard activation, pan/refit, and availability filters are checked; external tile availability is not asserted because the cloud environment blocks the tile provider.
 
 ## Maps and privacy boundaries
 
 The map uses Leaflet 1.9.4 and OpenStreetMap street tiles with visible attribution, custom geographic basketball pins, pan/zoom, auto-panning popups, and fit-to-results. Google Maps directions open only when requested. No Maps API key is required for this prototype. A custom Google-powered map can replace this provider when the required API configuration is supplied. Public OSM tiles have a usage policy and no app-specific uptime guarantee; production must provision an appropriate provider.
 
-Court coordinates, access, hours, and conditions remain sample/unverified. Pin eligibility is based on future scheduled games with open roster spots and the selected day/style; it never claims live court occupancy. Self-reported sample availability is not a court reservation. Known courts without matching available games remain in the results list without a pin.
+Court coordinates, access, hours, and conditions remain sample/unverified. All basketball parks is the default directory mode. The separate Games with open spots mode uses future scheduled games and selected day/style. Neither mode claims live court occupancy. Self-reported sample availability is not a court reservation. Known courts without matching available games remain in the results list without a pin.
 
 Precise user coordinates stay in memory for local filtering. Normal map viewport tile requests go to OpenStreetMap; opening directions sends the chosen public venue to Google. Stats/profile visibility remains a local UI demonstration, not server authorization. Real privacy, team reservations, and message delivery require authenticated shared storage.
 
 See [UX decisions and standard references](docs/UX-DECISIONS.md) for the applied conventions, source-access limitations, and remaining production work. The new published Figma site also could not be retrieved through the cloud proxy.
+
+## Showcase screenshots
+
+| Player stats and progress | Upcoming games and history |
+| --- | --- |
+| ![Showcase stats](docs/showcase-stats.png) | ![Showcase games](docs/showcase-games.png) |
 
 ## Next production milestones
 

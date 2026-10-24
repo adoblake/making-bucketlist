@@ -4,8 +4,10 @@ const leafletJS=await readFile(new URL('../public/vendor/leaflet/leaflet.js',imp
 const leafletCSS=await readFile(new URL('../public/vendor/leaflet/leaflet.css',import.meta.url),'utf8');
 const css=await readFile(new URL('../public/styles.css',import.meta.url),'utf8');
 const domain=(await readFile(new URL('../public/domain.js',import.meta.url),'utf8')).replace(/^export /gm,'');
-const app=(await readFile(new URL('../public/app.js',import.meta.url),'utf8')).replace(/^import .*?;\n/,'');
-html=html.replace('<link rel="stylesheet" href="/leaflet.css">','<style>'+leafletCSS+'</style>').replace('<script src="/leaflet.js"></script>','<script>'+leafletJS.replaceAll('</script','<\\/script')+'</script>').replace('<link rel="stylesheet" href="/styles.css">','<style>'+css+'</style>').replace('<script type="module" src="/app.js"></script>','').replace('</body>','<script>'+domain+'\n'+app+'</script></body>');
+const directory=(await readFile(new URL('../public/directory.js',import.meta.url),'utf8')).replace(/^export /gm,'');
+const demo=(await readFile(new URL('../public/demo.js',import.meta.url),'utf8')).replace(/^export /gm,'');
+const app=(await readFile(new URL('../public/app.js',import.meta.url),'utf8')).replace(/^import .*?;\n/gm,'');
+html=html.replace('<link rel="stylesheet" href="/leaflet.css">','<style>'+leafletCSS+'</style>').replace('<script src="/leaflet.js"></script>','<script>'+leafletJS.replaceAll('</script','<\\/script')+'</script>').replace('<link rel="stylesheet" href="/styles.css">','<style>'+css+'</style>').replace('<script type="module" src="/app.js"></script>','').replace('</body>','<script>'+domain+'\n'+directory+'\n'+demo+'\n'+app+'</script></body>');
 html='<!-- Leaflet 1.9.4 license\n'+await readFile(new URL('../public/vendor/leaflet/LICENSE',import.meta.url),'utf8')+'\n-->\n'+html;
 html=html.replace(/\r\n/g,'\n').replace(/[ \t]+$/gm,'');
 await writeFile(new URL('../BucketList.html',import.meta.url),html);

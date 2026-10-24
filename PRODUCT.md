@@ -52,3 +52,9 @@ Guests browse courts, games, and public roster details. A tab-local demo session
 ## Geographic availability markers
 
 The supplied orange basketball pin now belongs to real map coordinates, using Leaflet/OpenStreetMap rather than an iframe overlay. It appears only when a court matches the location/day/style search and has a future, non-cancelled scheduled game with an open roster spot. The map and results share those filters. This supersedes earlier Google-embed and illustrative-locator descriptions. Google directions remain available; a custom Google basemap requires Maps API configuration. Pins still reflect sample data, not verified live occupancy. The published Figma site was also blocked; standards and access evidence are documented in docs/UX-DECISIONS.md.
+
+## All-parks discovery and populated showcase
+
+The latest direction supersedes the game-only default: basketball parks are selectable even without a scheduled game. All basketball parks is the default; Games with open spots is a separate filter. Live directory lookup uses OSM parks and contained basketball features around a searched location. No global completeness or live provider success is claimed; provider errors/timeouts remain an external limitation, while fixture integration and failure handling are tested.
+
+A separately stored fictional 90-day player showcase demonstrates 24 stat-linked completed sessions, three upcoming games, named teams, three court groups, personal stats/averages/progress, profile visibility, and multi-person demo conversations. The user can return to preserved personal state or deliberately restart the sample.
