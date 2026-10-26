@@ -5,12 +5,12 @@ The basketball-pin silhouette from the supplied reference remains the primary co
 ## Implemented conventions
 
 - Geographic anchoring: Leaflet anchors the pin's bottom tip to the sample latitude/longitude and moves it with pan/zoom. Popups share that geographic anchor and auto-pan into view.
-- Search and map agree: location, day, and play-style filters drive the same candidate list. The default view fits matching available courts; **Show results** returns to them after panning. Panning does not silently change the search area.
+- Search and map agree: location, day, and play-style filters drive the same candidate list. The current map bounds are the search area. Pan/zoom updates both pins and list automatically without refitting the camera. A permanently accessible location arrow recenters on the user. Destination search deliberately moves the map; a name query narrows courts inside the current bounds.
 - Game-only filter (superseded as the default by All basketball parks): a pin requires at least one future, non-cancelled, matching game with remaining roster capacity. A full/expired game does not create a pin. Pins disappear when no games match. A known venue without a matching spot remains inspectable in the list without an availability icon.
 - Meaning: “available” means an open scheduled roster spot in the local sample, not verified court occupancy, booking, or access. All venues remain unverified. Adaptive basketball matches only explicitly adaptive games; All levels games also match other play styles.
 - Touch and keyboard: 44 × 64 pixel marker targets; accessible court names; Enter/Space selection; visible focus; Escape dismissal; controls independent of color. This is implementation guidance, not a claim of full WCAG conformance.
 - Public map → contextual court/game details → sign-in at the action. Court and game chats remain separate. Profile and stats sharing are still independently opt-in.
-- Street-map attribution stays visible. The base map stays readable in either app theme. When tiles fail, an explicit status explains that pins use sample coordinates; no invented street map is drawn.
+- Street-map attribution stays visible. The base map stays readable in either app theme. When tiles fail, an explicit status explains that court pins remain available; no invented street map is drawn.
 
 ## References and evidence
 
@@ -35,3 +35,13 @@ All basketball parks is now the default. Existing parks remain selectable withou
 ## Phoenix source correction
 
 The five-record bootstrap was insufficient. The app now bundles all 155 records from the City of Phoenix Basketball Courts layer and supplements them with park records explicitly listing basketball, normalized to 125 locations. The source is https://services.arcgis.com/cfKakmeHE95cgeEK/arcgis/rest/services/ParksOpenData/FeatureServer (layers 0 and 10), discovered through the ArcGIS item owned by City_of_Phoenix and fetched successfully. This replaces the Overpass dependency for the initial Phoenix experience. It does not assert all-city/global coverage. Leaflet.markercluster groups nearby courts with count labels, and the search list provides direct access to each location. Source dates and amenities appear in court details.
+
+## Location and returning-player opening
+
+First-time guests receive a skippable two-step welcome: court/team purpose, then profile benefits and privacy. Location is requested after the introduction; returning visitors request it on launch. Browser permission remains the authority. A blue location dot and accuracy circle distinguish the user from orange court pins. Denial, timeouts, and unavailable geolocation retain a usable map and explain manual destination search; fallback Phoenix is never labeled as the user's location.
+
+Signed-in local profiles reopen directly on the map across browser sessions. Explicit sign-out retains personal data but disables automatic re-entry. This is device-local prototype continuity, not production authentication. The existing profile/stat consent defaults remain unchanged.
+
+Area discovery uses a bounded Overpass query for basketball features rather than the older slow per-park boundary traversal. Queries are debounced, cancellable, cached for the current page, and require a reasonable zoom. OSM tags and public-service availability limit coverage. Current coordinates are memory-only; map bounds reach external directory services. Google directions use the chosen court coordinates, including entries without a street address.
+
+References: [W3C Geolocation API](https://www.w3.org/TR/geolocation/), [Leaflet map moveend and bounds](https://leafletjs.com/reference.html#map-moveend), and [Overpass bounding boxes](https://wiki.openstreetmap.org/wiki/Overpass_API/Language_Guide#Bounding_box). These support browser consent, a distinct user marker, and familiar map-area discovery.

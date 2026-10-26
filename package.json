@@ -16,7 +16,8 @@
     "publish:web": "npm run build:web && node scripts/publish-web.mjs",
     "preview:web": "node scripts/preview-web.mjs",
     "refresh:courts": "node scripts/refresh-courts.mjs",
-    "test:courts": "node tests/courts.cjs"
+    "test:courts": "node tests/courts.cjs",
+    "test:location": "node tests/location.cjs"
   },
   "engines": {
     "node": ">=22"

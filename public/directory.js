@@ -34,3 +34,32 @@ export async function discoverBasketballParks(query,signal,fetcher=fetch){
  const parks=normalizeParkDirectory(data.elements,city).filter(c=>{const r=d=>d*Math.PI/180,a=Math.sin(r(c.lat-lat)/2)**2+Math.cos(r(lat))*Math.cos(r(c.lat))*Math.sin(r(c.lng-lon)/2)**2;return 6371*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))<=16;});
  return {parks,center:{lat,lng:lon},city,checkedAt:new Date().toISOString()};
 }
+
+export async function locateDestination(query,signal,fetcher=fetch){
+ const response=await fetcher('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(query),{signal:signal?AbortSignal.any([signal,AbortSignal.timeout(10000)]):AbortSignal.timeout(10000)});
+ if(!response.ok)throw Error('Location search unavailable.');
+ const [place]=await response.json(),lat=Number(place?.lat),lng=Number(place?.lon);
+ if(!place||!Number.isFinite(lat)||!Number.isFinite(lng)||Math.abs(lat)>85||Math.abs(lng)>180)throw Error('Location not found.');
+ return {lat,lng};
+}
+
+export function areaCourtQuery({south,west,north,east}){
+ if(![south,west,north,east].every(Number.isFinite)||south>=north||west>=east||south< -85||north>85||west< -180||east>180||north-south>.6||east-west>.8)throw Error('Zoom in to search this map area.');
+ return `[out:json][timeout:15];nwr["sport"~"(^|;)basketball(;|$)"]["access"!="private"](${south},${west},${north},${east});out tags center;`;
+}
+
+export function normalizeAreaCourts(elements){
+ const found=new Map();
+ for(const e of elements){const t=e?.tags||{},p=e?.center||e;if(!e||!['node','way','relation'].includes(e.type)||!Number.isSafeInteger(e.id)||!/(^|;)basketball(;|$)/.test(t.sport||'')||t.access==='private'||!Number.isFinite(p?.lat)||!Number.isFinite(p?.lon)||Math.abs(p.lat)>85||Math.abs(p.lon)>180)continue;
+ const id=`osm-${e.type}-${e.id}`;found.set(id,{id,name:String(t.name||'Basketball court'),city:String(t['addr:city']||''),address:[t['addr:housenumber'],t['addr:street'],t['addr:city']].filter(Boolean).join(' ')||'Mapped basketball court · check the map for its location',lat:p.lat,lng:p.lon,description:'Basketball is tagged in OpenStreetMap. Confirm public access, hours, and conditions before you go.',source:'OpenStreetMap',sourceUrl:`https://www.openstreetmap.org/${e.type}/${e.id}`,courtIds:[e.type+'-'+e.id]});
+ }
+ return [...found.values()];
+}
+
+export async function discoverCourtsInBounds(bounds,signal,fetcher=fetch){
+ const query=areaCourtQuery(bounds);let lastError;
+ for(const endpoint of ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter']){
+  try{const response=await fetcher(endpoint+'?data='+encodeURIComponent(query),{signal:signal?AbortSignal.any([signal,AbortSignal.timeout(20000)]):AbortSignal.timeout(20000)});if(!response.ok)throw Error('Court directory unavailable.');const result=await response.json();if(result.remark||!Array.isArray(result.elements))throw Error('Incomplete directory response.');return normalizeAreaCourts(result.elements).filter(c=>c.lat>=bounds.south&&c.lat<=bounds.north&&c.lng>=bounds.west&&c.lng<=bounds.east);}catch(error){if(signal?.aborted)throw error;lastError=error;}
+ }
+ throw lastError||Error('Court directory unavailable.');
+}

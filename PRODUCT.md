@@ -68,3 +68,12 @@ An installable mobile web package adds the two-color orange/charcoal basketball-
 ## Phoenix coverage fix
 
 Phoenix no longer depends on a live Overpass lookup. A retrieved City of Phoenix public GIS snapshot supplies 125 basketball locations, preserving all 155 basketball point records plus park metadata. Names/known aliases are normalized, starter IDs are retained, and cached aliases preserve existing games/chats without duplicate pins. Clusters keep the full-city map readable. All 125 entries are searchable and selectable without games. Court details expose source/date/location precision and listed amenities. The refresh helper was validated against the real city service. Other cities still have starter/live-provider limits; source listings are not live occupancy or access guarantees.
+
+
+## Current opening and map-area search
+
+This supersedes earlier fixed-Phoenix, tab-only-session, radius-filter, and fit-to-results descriptions. First-time guests see a skippable two-step introduction, with the option to create a local profile. Returning signed-in local profiles go straight to the map and retain their saved information. Explicit sign-out stops automatic re-entry. Real cross-device accounts and server authentication remain a production milestone.
+
+On launch the app requests foreground browser geolocation, centers on the user when allowed, and displays a blue dot with accuracy radius. Denied/unavailable location retains manual destination search and explains the fallback map. Orange basketball pins and the search list include only matching courts inside the current map bounds. Pan/zoom updates results without resetting the camera. A location button returns the map to the user.
+
+The full municipal Phoenix snapshot remains bundled. Other map areas automatically query OSM basketball features in the visible bounding box, with debounce, request cancellation, a zoom limit, and honest failure/incomplete-coverage labels. Exact coordinates are not saved to the profile; external map/directory providers receive viewport requests. No live occupancy or exhaustive worldwide coverage is promised.
